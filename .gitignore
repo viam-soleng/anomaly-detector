@@ -160,3 +160,4 @@ cython_debug/
 #.idea/
 training/viam_temp.csv
 model/anomaly.onnx
+viam_temp.csv
