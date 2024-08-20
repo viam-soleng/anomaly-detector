@@ -1,0 +1,15 @@
+googleapis-common-protos==1.63.2
+grpclib==0.4.7
+h2==4.1.0
+hpack==4.0.0
+hyperframe==6.0.1
+multidict==6.0.5
+numpy==2.1.0
+pandas==2.2.2
+protobuf==5.27.3
+python-dateutil==2.9.0.post0
+pytz==2024.1
+six==1.16.0
+typing_extensions==4.12.2
+tzdata==2024.1
+viam-sdk==0.29.1
