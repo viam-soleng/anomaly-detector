@@ -83,6 +83,8 @@ The following attributes are available for `<INSERT MODEL TRIPLET>` <INSERT API 
 
 ### Next steps
 
+To train your own model with your data we have created a sample training script which should be easy to tune towards your particular data set: [Model Training](training/README.md)
+
 Let us know if you are interested in this topic, have questions, struggle with setting it up, enhancing it etc.. We are happy to help!
 
 ## Troubleshooting
