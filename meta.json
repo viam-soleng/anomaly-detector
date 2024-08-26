@@ -1,0 +1,14 @@
+{
+  "$schema": "https://dl.viam.dev/module.schema.json",
+  "module_id": "viam-soleng:anomaly-detector",
+  "visibility": "private",
+  "url": "https://github.com/viam-soleng/anomaly-detector",
+  "description": "a Viam module for detecting anomalies in sensor data using an isolation forest algorithm",
+  "models": [
+    {
+      "api": "rdk:component:sensor",
+      "model": "viam-soleng:sensor:anomaly"
+    }
+  ],
+  "entrypoint": "dist/main"
+}
