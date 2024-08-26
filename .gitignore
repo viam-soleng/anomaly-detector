@@ -161,3 +161,4 @@ cython_debug/
 training/viam_temp.csv
 model/anomaly.onnx
 viam_temp.csv
+.DS_Store
