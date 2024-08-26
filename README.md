@@ -45,9 +45,35 @@ To create your own development setup follow these steps (tested on OSX):
   "type": "sensor",
   "model": "viam-soleng:sensor:anomaly",
   "attributes": {
-    "sensor": "fake-sensor",
-    "model": "mlmodel",
-    "queue": 3
+    {
+      "sensor": "fake-sensor",
+      "model": "mlmodel",
+      "features": [
+        {
+          "key": "a"
+        },
+        {
+          "key": "Hour"
+        },
+        {
+          "key": "Week_Day"
+        },
+        {
+          "key": "Month_Day"
+        },
+        {
+          "key": "Month"
+        },
+        {
+          "key": "b",
+          "rolling_mean": 7
+        },
+        {
+          "key": "c",
+          "lag": 1
+        }
+      ]
+    }
   }
 }
 ```
@@ -75,11 +101,18 @@ To create your own development setup follow these steps (tested on OSX):
 
 The following attributes are available for `<INSERT MODEL TRIPLET>` <INSERT API NAME>s:
 
-| Name     | Type   | Required?    | Description                                             |
-| -------- | ------ | ------------ | ------------------------------------------------------- |
-| `sensor` | string | **Required** | The sensor you want to apply the ml model to            |
-| `model`  | string | **Required** | The ml model to be used                                 |
-| `queue`  | int    | **Required** | Queue size to calculate the rolling average, must be >1 |
+| Name                   | Type     | Required?    | Description                                                                                                               |
+| ---------------------- | -------- | ------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| `sensor`               | string   | **Required** | The sensor you want to apply the ml model to                                                                              |
+| `model`                | string   | **Required** | The ml model to be used                                                                                                   |
+| `features`             | [struct] | **Required** | List of features                                                                                                          |
+| `feature.key`          | string   | **Required** | The key to the reading of your input/source sensor or one of `"Year", "Month", "Month_Day", "Week_Day", "Hour", "Minute"` |
+| `feature.rolling_mean` | int      | **Optional** | Number of readings to calculate the rolling mean of this feature                                                          |
+| `feature.lag`          | int      | **Optional** | Adds the reading `current-n`.                                                                                             |
+
+> [!IMPORTANT]
+> The order of features is consistent with the order used for passing them into the ML model.
+> Make sure this maps to the order you have trained the model with!
 
 ### Next steps
 
