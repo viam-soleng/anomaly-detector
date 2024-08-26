@@ -8,98 +8,57 @@ This is an advanced topic and Viam basics such as configuring machines, componen
 
 If you haven't done so, I recommend to familiarize with the topic of creating your own Viam resources. You can find the related documentation here: [Create Your Own Modules](https://docs.viam.com/registry/#create-your-own-modules).
 
-To create your own development setup follow these steps (tested on OSX):
+To create your own development setup follow these steps (currently tested on `Darwin/arm64`):
 
 1. Install `viam-server` on your machine [Install Guide](https://docs.viam.com/installation/)
-2. Clone this repository to your machine
-3. In app.viam.com navigate to the JSON configuration of your machine
-4. Add this configuration into the `modules` array:
-
+2. Clone this repository to your machine or just download the [sample.onnx](model/sample.onnx) file
+3. In app.viam.com navigate to the `Configuration` tab of your machine
+4. Add the [ONNX module](https://app.viam.com/module/viam-labs/onnx-cpu) under add `Service` to your machine
+5. Change the name to `mlmodel` in the prompt
+6. In the automatically created `mlmodel` component enter the path to the previously downloaded `sample.onnx` file
+7. Add a [fake sensor](https://docs.viam.com/components/sensor/fake/)
+8. Add the [anomaly detector](https://app.viam.com/module/viam-soleng/anomaly-detector) module under add `Component` from the Viam registry
+9. Add this configuration to the newly added `attributes` of the anomaly detector sensor:
 ```json
 {
-  "type": "registry",
-  "name": "viam-labs_onnx-cpu",
-  "module_id": "viam-labs:onnx-cpu",
-  "version": "0.1.4"
-},
-{
-  "type": "local",
-  "name": "local-module",
-  "executable_path": "/<YOUR PATH>/anomaly-detector/run.sh"
-}
-```
-
-5. Add this configuration into the `components` array:
-
-```json
-{
-  "name": "fake-sensor",
-  "namespace": "rdk",
-  "type": "sensor",
-  "model": "fake",
-  "attributes": {}
-},
-{
-  "name": "sensor",
-  "namespace": "rdk",
-  "type": "sensor",
-  "model": "viam-soleng:sensor:anomaly",
-  "attributes": {
+  "features": [
     {
-      "sensor": "fake-sensor",
-      "model": "mlmodel",
-      "features": [
-        {
-          "key": "a"
-        },
-        {
-          "key": "Hour"
-        },
-        {
-          "key": "Week_Day"
-        },
-        {
-          "key": "Month_Day"
-        },
-        {
-          "key": "Month"
-        },
-        {
-          "key": "b",
-          "rolling_mean": 7
-        },
-        {
-          "key": "c",
-          "lag": 1
-        }
-      ]
+      "key": "a"
+    },
+    {
+      "key": "Hour"
+    },
+    {
+      "key": "Week_Day"
+    },
+    {
+      "key": "Month_Day"
+    },
+    {
+      "key": "Month"
+    },
+    {
+      "key": "c",
+      "rolling_mean": 3
+    },
+    {
+      "key": "c",
+      "lag": 1
     }
-  }
+  ],
+  "sensor": "fake-sensor",
+  "model": "mlmodel"
 }
-```
-
-7. Add this configuration to the `services` array:
-
-```json
-{
-  "name": "mlmodel",
-  "namespace": "rdk",
-  "type": "mlmodel",
-  "model": "viam-labs:mlmodel:onnx-cpu",
-  "attributes": {
-    "model_path": "/<YOUR PATH>/anomaly-detector/model/sample.onnx",
-    "label_path": ""
-  }
-}
-```
+``` 
 
 6. Save the configuration and start the machine
+
 
 ## Configure your `anomaly-detector` sensor
 
 ### Attributes
 
-The following attributes are available for `<INSERT MODEL TRIPLET>` <INSERT API NAME>s:
+The following attributes are available:
 
 | Name                   | Type     | Required?    | Description                                                                                                               |
 | ---------------------- | -------- | ------------ | ------------------------------------------------------------------------------------------------------------------------- |
