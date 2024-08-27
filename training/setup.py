@@ -1,7 +1,7 @@
 from setuptools import find_packages, setup
 
 setup(
-    name="training",
+    name="train_isolation_forest",
     version="0.1",
     packages=find_packages(),
     include_package_data=True,
@@ -9,6 +9,7 @@ setup(
         "google-cloud-aiplatform",
         "google-cloud-storage",
         # TODO: Add additional required packages
+        "argparse",
         "bson==0.5.10",
         "coloredlogs==15.0.1",
         "flatbuffers==24.3.25",

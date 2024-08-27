@@ -6,6 +6,7 @@ import numpy as np
 from onnx import ModelProto
 import pandas as pd
 from pathlib import Path
+import argparse
 
 from skl2onnx.common.data_types import FloatTensorType
 from skl2onnx import to_onnx
@@ -23,8 +24,29 @@ load_dotenv()
 # Set the path and name for the data and model files
 data_path = Path.cwd()
 data_name = "viam_temp.csv"
-model_path = Path.cwd().parent / "model"
+model_dir = Path.cwd().parent / "model"
 model_name = "anomaly.onnx"
+
+
+############################################################################################################
+# CLI Args Parser
+############################################################################################################
+
+
+def parse_args():
+    """Returns dataset file, model output directory, and num_epochs if present. These must be parsed as command line
+    arguments and then used as the model input and output, respectively. The number of epochs can be used to optionally override the default.
+    """
+    parser = argparse.ArgumentParser()
+    # TODO: Add additional arguments as needed
+    # parser.add_argument("--dataset_file", dest="data_json", type=str)
+    parser.add_argument("--model_output_directory", dest="model_dir", type=str)
+    parser.add_argument("--model_name", dest="model_name", type=str)
+    parser.add_argument("--org-id", dest="org_id", type=str)
+    # parser.add_argument("--num_epochs", dest="num_epochs", type=int)
+    args = parser.parse_args()
+    return args.model_dir, args.model_name, args.org_id
+
 
 ############################################################################################################
 # Get data from app.viam.com
@@ -171,15 +193,19 @@ def fit_isolation_forest(
 # Script exection
 ############################################################################################################
 
-training_data = asyncio.run(download())
+if __name__ == "__main__":
 
-df = featureEng(training_data)
+    # Parse the CLI arguments
+    model_dir, model_name, org_id = parse_args()
+    # Download the training data
+    training_data = asyncio.run(download())
+    # Feature Engineering
+    df = featureEng(training_data)
+    # Train the model
+    onx = fit_isolation_forest(df)
+    # Save the model
+    filename = os.path.join(model_dir, f"{model_name}.onnx")
+    with open(filename, "wb") as f:
+        f.write(onx.SerializeToString())
 
-# Train the model
-onx = fit_isolation_forest(df)
-
-# Save the model
-with open(model_path / model_name, "wb") as f:
-    f.write(onx.SerializeToString())
-
-print(f"Isolation Forest Fitted and model created: ", model_path)
+    print(f"Isolation Forest Fitted and model created: ", filename)
