@@ -20,14 +20,6 @@ from viam.rpc.dial import DialOptions
 
 load_dotenv()
 
-
-# Set the path and name for the data and model files
-data_path = Path.cwd()
-data_name = "viam_temp.csv"
-model_dir = Path.cwd().parent / "model"
-model_name = "anomaly.onnx"
-
-
 ############################################################################################################
 # CLI Args Parser
 ############################################################################################################
@@ -39,13 +31,11 @@ def parse_args():
     """
     parser = argparse.ArgumentParser()
     # TODO: Add additional arguments as needed
-    # parser.add_argument("--dataset_file", dest="data_json", type=str)
-    parser.add_argument("--model_output_directory", dest="model_dir", type=str)
     parser.add_argument("--model_name", dest="model_name", type=str)
     parser.add_argument("--org-id", dest="org_id", type=str)
-    # parser.add_argument("--num_epochs", dest="num_epochs", type=int)
+    parser.add_argument("--num_limit", dest="num_limit", type=int)
     args = parser.parse_args()
-    return args.model_dir, args.model_name, args.org_id
+    return args.model_name, args.org_id, args.num_limit
 
 
 ############################################################################################################
@@ -61,7 +51,7 @@ async def connect() -> ViamClient:
     return await ViamClient.create_from_dial_options(dial_options)
 
 
-async def download():
+async def download(limit: int = 10000):
     """Load the data and print the first 5 rows and a summary of the data."""
     print("Downloading data...")
     viam_client = await connect()
@@ -76,8 +66,7 @@ async def download():
             bson.dumps(
                 {
                     "$match": {
-                        "component_name": "tmp36",
-                        "data.readings.temp": {"$exists": True},
+                        "component_name": "fake-sensor",
                     }
                 }
             ),
@@ -85,16 +74,19 @@ async def download():
                 {
                     "$project": {
                         "timestamp": {"$dateToString": {"date": "$time_received"}},
-                        "value": "$data.readings.temp",
+                        "value": "$data.readings.a",
                     }
                 }
             ),
-            bson.dumps({"$limit": 10000}),
+            bson.dumps({"$limit": limit}),
         ],
     )
     df = pd.DataFrame(tabular_data)
+    # TODO: timestamp conversion shouldn't be necessary once the Viam SDK date type in the MQL API is fixed
+    # Also remove above in the MQL pipeline
+    df["timestamp"] = pd.to_datetime(df["timestamp"])
     viam_client.close()
-    print("Data downloaded.")
+    print(f"{len(df)} reading(s) downloaded")
     return df
 
 
@@ -196,16 +188,18 @@ def fit_isolation_forest(
 if __name__ == "__main__":
 
     # Parse the CLI arguments
-    model_dir, model_name, org_id = parse_args()
+    model_name, org_id, num_limit = parse_args()
     # Download the training data
-    training_data = asyncio.run(download())
+    training_data = asyncio.run(download(num_limit))
     # Feature Engineering
     df = featureEng(training_data)
     # Train the model
+    print("Training Data:")
+    print(df.head(10))
     onx = fit_isolation_forest(df)
     # Save the model
-    filename = os.path.join(model_dir, f"{model_name}.onnx")
+    filename = os.path.join(Path.cwd(), f"{model_name}.onnx")
     with open(filename, "wb") as f:
         f.write(onx.SerializeToString())
 
-    print(f"Isolation Forest Fitted and model created: ", filename)
+    print(f"Isolation forest fitted and model created: ", filename)
