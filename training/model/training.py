@@ -18,6 +18,30 @@ from dotenv import load_dotenv
 from viam.app.viam_client import ViamClient
 from viam.rpc.dial import DialOptions
 
+import logging
+from google.cloud import logging_v2
+from google.cloud import storage
+import joblib
+
+client = logging_v2.client.Client()
+
+# set the format for the log
+google_log_format = logging.Formatter(
+    fmt="%(name)s | %(module)s | %(funcName)s | %(message)s",
+    datefmt="%Y-%m-$dT%H:%M:%S",
+)
+
+
+handler = client.get_default_handler()
+handler.setFormatter(google_log_format)
+
+cloud_logger = logging.getLogger("vertex-ai-notebook-logger")
+cloud_logger.setLevel("INFO")
+cloud_logger.addHandler(handler)
+
+log = logging.getLogger("vertex-ai-notebook-logger")
+log.info("This is a log from a Vertex AI Notebook!")
+
 load_dotenv()
 
 ############################################################################################################
@@ -31,11 +55,13 @@ def parse_args():
     """
     parser = argparse.ArgumentParser()
     # TODO: Add additional arguments as needed
-    parser.add_argument("--model_name", dest="model_name", type=str)
-    parser.add_argument("--org-id", dest="org_id", type=str)
-    parser.add_argument("--num_limit", dest="num_limit", type=int)
+    # parser.add_argument("--model-name", dest="model_name", type=str)
+    parser.add_argument("--model_output_directory", dest="model_dir", type=str)
+    parser.add_argument("--dataset_file", dest="data_json", type=str)
+    # parser.add_argument("--org-id", dest="org_id", type=str)
+    # parser.add_argument("--num_limit", dest="num_limit", type=int)
     args = parser.parse_args()
-    return args.model_name, args.org_id, args.num_limit
+    return args.model_dir
 
 
 ############################################################################################################
@@ -59,7 +85,7 @@ async def download(limit: int = 10000):
 
     # Query the data set using MongoDB Query Language (MQL)
     tabular_data = await data_client.tabular_data_by_mql(
-        organization_id=os.getenv("ORGANIZATION_ID"),
+        organization_id="96b696a0-51b9-403b-ae0d-63753923652f",  # os.getenv("ORGANIZATION_ID"),
         # The MQL aggregation pipeline extract and preprocess the data
         # TODO: Set this to suit your data! https://www.mongodb.com/docs/manual/core/aggregation-pipeline/
         mql_binary=[
@@ -188,9 +214,10 @@ def fit_isolation_forest(
 if __name__ == "__main__":
 
     # Parse the CLI arguments
-    model_name, org_id, num_limit = parse_args()
+    model_dir = parse_args()
+    model_name = "isolation_forest.onnx"
     # Download the training data
-    training_data = asyncio.run(download(num_limit))
+    training_data = asyncio.run(download())
     # Feature Engineering
     df = featureEng(training_data)
     # Train the model
@@ -198,8 +225,18 @@ if __name__ == "__main__":
     print(df.head(10))
     onx = fit_isolation_forest(df)
     # Save the model
-    filename = os.path.join(Path.cwd(), f"{model_name}.onnx")
-    with open(filename, "wb") as f:
-        f.write(onx.SerializeToString())
+    # https://cloud.google.com/vertex-ai/docs/training/exporting-model-artifacts#joblib_1
+    joblib.dump(onx, model_name)
 
-    print(f"Isolation forest fitted and model created: ", filename)
+    # filename = os.path.join(Path.cwd(), model_name)
+    # with open(filename, "wb") as f:
+    #    f.write(onx.SerializeToString())
+
+    # Upload the model to GCS
+    # Upload model artifact to Cloud Storage
+    storage_path = os.path.join(model_dir, model_name)
+    log.info(f"Uploading model to {storage_path}")
+    blob = storage.blob.Blob.from_string(storage_path, client=storage.Client())
+    blob.upload_from_filename(model_name)
+
+    print(f"Isolation forest fitted and model created: ", model_name)
