@@ -236,7 +236,9 @@ if __name__ == "__main__":
     # Upload model artifact to Cloud Storage
     storage_path = os.path.join(model_dir, model_name)
     log.info(f"Uploading model to {storage_path}")
-    blob = storage.blob.Blob.from_string(storage_path, client=storage.Client())
+    blob = storage.blob.Blob.from_string(
+        "gs://" + storage_path.removeprefix("/gcs/"), client=storage.Client()
+    )
     blob.upload_from_filename(model_name)
 
     print(f"Isolation forest fitted and model created: ", model_name)
