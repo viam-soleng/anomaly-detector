@@ -1,30 +1,40 @@
-# Train Your Own Model
+# Viam Custom Training Script Workflow
 
-## Prerequisits
+This folder contains a ML model training script which is used to train an isolation forest model with data stored in the Viam cloud backend.
+The model is then uploaded into the Viam Registry and is ready to be deployed onto a Viam machine running `viam-server`.
 
-If you haven't done so, make sure you have installed all required dependencies:
+## Create Custom Training Script Bundle (tar.gz)
 
-```sh
-pip install -r requirements.txt
+The Viam custom training script workflow requires a Python source distribution.
+To create this tarball change into the `training` folder and run the python command:
+
+```shell
+cd training
+python setup.py sdist
 ```
 
-To be able to connect to the Viam cloud backend, create a `.env` file in the project root `../` with the following variables and add your specific values:
+## Upload Custom Training Script
 
-```sh
-API_KEY_ID=
-API_KEY=
-ORGANIZATION_ID=
+The tarball can then be uploaded into the Viam Registry using the following viam CLI commmand (You will have to be authenticated: `viam login`):
+
+```shell
+viam training-script upload --path=dist/train_if-0.1.tar.gz --org-id=< YOUR ORG ID > --script-name="IsolationForest"
 ```
 
-## Train Your Model
+## Submit a Custom Training Job
 
-This script requires tuning towards your data! I will add hints at a later point in time to make it easier to adapt it.
-You should be easily able to figure it out yourself however in the meantime. Otherwise feel free to reach out.
+Once the training script is uploaded to the Viam Registry, you can run the training process with the following command:
 
-The script works in the following way:
+```shell
+viam train submit custom from-registry --dataset-id=< DATASET ID - NOT USED BUT REQUIRED > --org-id=< ORG ID > --model-name="isolation_forest" --script-name="< ORG ID >":IsolationForest" --version=< SCRIPT VERSION FROM REGISTRY >
+```
 
-1. Connects to the Viam cloud backend using an MQL aggregation pipeline to download sensor data and stores it in a local csv file
-2. It loads the CSV file, applies some type conversions (timestamp to date) and removes null values
-3. Calculates additional information such as the rolling mean and also adds the previous value to each observation
-4. Trains an `sklearn isolation forest model` and converts it to `onnx` so we can run it with `viam-server`
-5. Takes the training dataset and runs inference on it -> prints the results to command line
+viam train submit custom from-registry --dataset-id=<INSERT DATASET ID (NOT USED BUT NEEDS TO BE PROVIDED)> --org-id=<INSERT ORG ID> --model-name="isolation_forest" --script-name="< YOUR ORG ID >:isolation_forest" --version=1725035381953
+
+## Get Training Job Logs
+
+Once you have successfully submitted the custom training job, you can access log information with the following command:
+
+```shell
+viam train get --job-id=< JOB ID >
+```

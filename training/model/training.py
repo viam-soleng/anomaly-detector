@@ -5,7 +5,6 @@
 import numpy as np
 from onnx import ModelProto
 import pandas as pd
-from pathlib import Path
 import argparse
 
 from skl2onnx.common.data_types import FloatTensorType
@@ -24,23 +23,18 @@ from google.cloud import storage
 import joblib
 
 client = logging_v2.client.Client()
-
 # set the format for the log
 google_log_format = logging.Formatter(
     fmt="%(name)s | %(module)s | %(funcName)s | %(message)s",
     datefmt="%Y-%m-$dT%H:%M:%S",
 )
 
-
 handler = client.get_default_handler()
 handler.setFormatter(google_log_format)
-
-cloud_logger = logging.getLogger("vertex-ai-notebook-logger")
-cloud_logger.setLevel("INFO")
-cloud_logger.addHandler(handler)
-
 log = logging.getLogger("vertex-ai-notebook-logger")
-log.info("This is a log from a Vertex AI Notebook!")
+log.setLevel("INFO")
+log.addHandler(handler)
+
 
 load_dotenv()
 
@@ -54,12 +48,8 @@ def parse_args():
     arguments and then used as the model input and output, respectively. The number of epochs can be used to optionally override the default.
     """
     parser = argparse.ArgumentParser()
-    # TODO: Add additional arguments as needed
-    # parser.add_argument("--model-name", dest="model_name", type=str)
     parser.add_argument("--model_output_directory", dest="model_dir", type=str)
     parser.add_argument("--dataset_file", dest="data_json", type=str)
-    # parser.add_argument("--org-id", dest="org_id", type=str)
-    # parser.add_argument("--num_limit", dest="num_limit", type=int)
     args = parser.parse_args()
     return args.model_dir
 
@@ -78,8 +68,8 @@ async def connect() -> ViamClient:
 
 
 async def download(limit: int = 10000):
-    """Load the data and print the first 5 rows and a summary of the data."""
-    print("Downloading data...")
+    """Download the training data"""
+    log.info("Downloading data...")
     viam_client = await connect()
     data_client = viam_client.data_client
 
@@ -112,7 +102,7 @@ async def download(limit: int = 10000):
     # Also remove above in the MQL pipeline
     df["timestamp"] = pd.to_datetime(df["timestamp"])
     viam_client.close()
-    print(f"{len(df)} reading(s) downloaded")
+    log.info(f"{len(df)} reading(s) downloaded")
     return df
 
 
@@ -122,7 +112,7 @@ async def download(limit: int = 10000):
 
 
 def featureEng(df: pd.DataFrame):
-    print("Feature Engineering...")
+    log.info("Feature Engineering...")
     # A variety of resamples which I may or may not use
     # TODO: Push down to the backend -> Agg. pipeline
     df_sampled = df.set_index("timestamp").resample("5min").mean().reset_index()
@@ -153,7 +143,7 @@ def featureEng(df: pd.DataFrame):
         DataFrame["Rolling_Mean"] = DataFrame["value"].rolling(7, min_periods=1).mean()
         DataFrame = DataFrame.dropna()
     df_sampled.dropna(inplace=True)
-    print("Feature Engineering Completed")
+    log.info("Feature Engineering Completed")
     return df_sampled
 
 
@@ -165,7 +155,7 @@ def featureEng(df: pd.DataFrame):
 def fit_isolation_forest(
     model_data: pd.DataFrame,
 ) -> ModelProto:
-    print("Fitting Isolation Forest...")
+    log.info("Fitting Isolation Forest...")
     model_data = (
         model_data[
             [
@@ -215,30 +205,28 @@ if __name__ == "__main__":
 
     # Parse the CLI arguments
     model_dir = parse_args()
-    model_name = "isolation_forest.onnx"
+
     # Download the training data
     training_data = asyncio.run(download())
+
     # Feature Engineering
+    log.info("Feature Engineering")
     df = featureEng(training_data)
+
     # Train the model
-    print("Training Data:")
-    print(df.head(10))
+    log.info("Train the model")
     onx = fit_isolation_forest(df)
-    # Save the model
+
+    # Save the model on the local filesystem
     # https://cloud.google.com/vertex-ai/docs/training/exporting-model-artifacts#joblib_1
+    model_name = "model.onnx"
     joblib.dump(onx, model_name)
 
-    # filename = os.path.join(Path.cwd(), model_name)
-    # with open(filename, "wb") as f:
-    #    f.write(onx.SerializeToString())
-
-    # Upload the model to GCS
-    # Upload model artifact to Cloud Storage
+    # Upload the model to google cloud storage
     storage_path = os.path.join(model_dir, model_name)
     log.info(f"Uploading model to {storage_path}")
     blob = storage.blob.Blob.from_string(
         "gs://" + storage_path.removeprefix("/gcs/"), client=storage.Client()
     )
     blob.upload_from_filename(model_name)
-
-    print(f"Isolation forest fitted and model created: ", model_name)
+    log.info("Model uploaded to Cloud Storage")
