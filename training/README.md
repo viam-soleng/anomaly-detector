@@ -29,8 +29,6 @@ Once the training script is uploaded to the Viam Registry, you can run the train
 viam train submit custom from-registry --dataset-id=< DATASET ID - NOT USED BUT REQUIRED > --org-id=< ORG ID > --model-name="isolation_forest" --script-name="< ORG ID >":IsolationForest" --version=< SCRIPT VERSION FROM REGISTRY >
 ```
 
-viam train submit custom from-registry --dataset-id=<INSERT DATASET ID (NOT USED BUT NEEDS TO BE PROVIDED)> --org-id=<INSERT ORG ID> --model-name="isolation_forest" --script-name="< YOUR ORG ID >:isolation_forest" --version=1725035381953
-
 ## Get Training Job Logs
 
 Once you have successfully submitted the custom training job, you can access log information with the following command:
