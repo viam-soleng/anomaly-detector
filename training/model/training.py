@@ -20,7 +20,6 @@ from viam.rpc.dial import DialOptions
 import logging
 from google.cloud import logging_v2
 from google.cloud import storage
-import joblib
 
 client = logging_v2.client.Client()
 # set the format for the log
@@ -218,9 +217,10 @@ if __name__ == "__main__":
     onx = fit_isolation_forest(df)
 
     # Save the model on the local filesystem
-    # https://cloud.google.com/vertex-ai/docs/training/exporting-model-artifacts#joblib_1
-    model_name = "model.onnx"
-    joblib.dump(onx, model_name)
+    model_name = "isolation_forest.onnx"
+    with open(model_name, "wb") as f:
+        f.write(onx.SerializeToString())
+    print(f"Isolation Forest Fitted and model created: ", model_name)
 
     # Upload the model to google cloud storage
     storage_path = os.path.join(model_dir, model_name)
