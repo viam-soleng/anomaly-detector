@@ -1,0 +1,5 @@
+google-cloud-aiplatform==1.64.0
+onnx
+skl2onnx
+bson
+viam-sdk
