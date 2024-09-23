@@ -4,6 +4,13 @@ This [module](https://docs.viam.com/registry/#modular-resources) implements the 
 This repo can be used as a starter kit to implement your personal real time anomaly detection using a machine learning model trained with your data.
 This is an advanced topic and Viam basics such as configuring machines, components and services are expected to be known! If you are not familiar with these topics yet, I recommend to start with this [beginner tutorial](https://docs.viam.com/how-tos/configure/) first and then come back.
 
+## Concept
+
+The anomaly sensor takes an "actual" sensor as dependency/input and forwards it to the isolation forest onnx model for inference. The process is triggered by a client e.g. the Viam data manager polling the anomaly detector readings api:
+
+![image](media/concept.png)
+
+
 ## Requirements
 
 If you haven't done so, I recommend to familiarize with the topic of creating your own Viam resources. You can find the related documentation here: [Create Your Own Modules](https://docs.viam.com/registry/#create-your-own-modules).
