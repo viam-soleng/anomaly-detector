@@ -1,6 +1,6 @@
 # Tabular Data `Anomaly-Detector` Module
 
-This [module](https://docs.viam.com/registry/#modular-resources) implements the [`rdk:component:base` API](/components/base/#api) in an `anomaly-detector` model.
+This [module](https://docs.viam.com/registry/#modular-resources) implements the [`rdk:component:sensor` API](/components/sensor/#api) in an `anomaly-detector` model.
 This repo can be used as a starter kit to implement your personal real time anomaly detection using a machine learning model trained with your data.
 This is an advanced topic and Viam basics such as configuring machines, components and services are expected to be known! If you are not familiar with these topics yet, I recommend to start with this [beginner tutorial](https://docs.viam.com/how-tos/configure/) first and then come back.
 
